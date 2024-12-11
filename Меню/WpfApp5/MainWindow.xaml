@@ -1,0 +1,28 @@
+﻿<Window x:Class="WpfApp5.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:WpfApp5"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="500" Width="900">
+    <Grid>
+        <ComboBox Name="File" SelectedIndex="0" Margin="0,10,850,449">
+            <Label Content="File"/>
+            <ComboBoxItem Content="New"/>
+            <ComboBoxItem Content="Open"/>
+            <ComboBoxItem Content="Exit"/>
+        </ComboBox>
+        <ComboBox Name="Edit" SelectedIndex="0" Margin="55,10,795,449">
+            <Label Content="Edit"/>
+            <ComboBoxItem Content="Cut"/>
+            <ComboBoxItem Content="Copy"/>
+            <ComboBoxItem Content="Paste"/>
+        </ComboBox>
+        <ComboBox Name="Help" SelectedIndex="0" Margin="110,11,740,449" RenderTransformOrigin="4.941,6.691">
+            <Label Content="Help"/>
+            <ComboBoxItem Content="About"/>
+        </ComboBox>
+        
+    </Grid>
+</Window>
