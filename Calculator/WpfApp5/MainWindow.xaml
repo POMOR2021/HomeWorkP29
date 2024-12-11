@@ -1,0 +1,46 @@
+﻿<Window x:Class="WpfApp5.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:WpfApp5"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="100"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Margin="5">
+            <TextBox x:Name="PredZadTB"/>
+            <TextBox x:Name="NumberTB"/>
+        </StackPanel>
+
+        <UniformGrid Grid.Row="1" Rows="5" Columns="4" Margin="5">
+            <Button Content="C" Click="ClearAllClick"/>
+            <Button Content="CE" Click="CleanClick"/>
+            <Button Content="&lt;" Click="DeleteLastNumClick"/>
+            <Button Content="/" Click="OperClick"/>
+
+            <Button Content="7" Click="NumClick"/>
+            <Button Content="8" Click="NumClick"/>
+            <Button Content="9" Click="NumClick"/>
+            <Button Content="*" Click="OperClick"/>
+
+            <Button Content="4" Click="NumClick"/>
+            <Button Content="5" Click="NumClick"/>
+            <Button Content="6" Click="NumClick"/>
+            <Button Content="-" Click="OperClick"/>
+
+            <Button Content="1" Click="NumClick"/>
+            <Button Content="2" Click="NumClick"/>
+            <Button Content="3" Click="NumClick"/>
+            <Button Content="+" Click="OperClick"/>
+
+            <Button Content="0" Click="NumClick"/>
+            <Button Content="." Click="FLoatClick"/>
+            <Button Content="=" Click="CalcClick"/>
+        </UniformGrid>
+    </Grid>
+</Window>
