@@ -1,0 +1,33 @@
+﻿<Window x:Class="KeyboardTrainer.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Клавиатурный тренажер" Height="400" Width="600"
+        KeyDown="Window_KeyDown" KeyUp="Window_KeyUp">
+    <Grid>
+        <!-- Верхняя панель управления -->
+        <StackPanel Orientation="Vertical" Margin="10">
+            <TextBlock Text="Клавиатурный тренажер" FontSize="20" FontWeight="Bold" TextAlignment="Center"/>
+
+            <StackPanel Orientation="Horizontal" Margin="5">
+                <TextBlock Text="Длина строки:" VerticalAlignment="Center"/>
+                <Slider x:Name="SliderLength" Minimum="10" Maximum="50" Value="20" Width="100" Margin="5"/>
+                <CheckBox x:Name="CheckCaseSensitive" Content="Учитывать регистр" Margin="5"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Margin="5">
+                <Button x:Name="BtnStart" Content="Start" Click="BtnStart_Click" Width="75"/>
+                <Button x:Name="BtnStop" Content="Stop" Click="BtnStop_Click" Width="75" IsEnabled="False"/>
+                <TextBlock x:Name="TextStats" Text="Скорость: 0 зн/мин | Ошибки: 0" Margin="10"/>
+            </StackPanel>
+
+            <!-- Строка для ввода -->
+            <TextBlock x:Name="TextToType" FontSize="18" FontWeight="Bold" TextAlignment="Center" Margin="10"/>
+            <TextBlock x:Name="TextInput" FontSize="18" TextAlignment="Center" Margin="10" Foreground="Gray"/>
+        </StackPanel>
+
+        <!-- Клавиатура -->
+        <UniformGrid x:Name="UniformGrid" Rows="4" Columns="10" Margin="10,150,10,10">
+            <!-- Клавиши (заполняются динамически) -->
+        </UniformGrid>
+    </Grid>
+</Window>
