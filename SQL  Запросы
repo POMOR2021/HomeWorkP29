@@ -1,0 +1,16 @@
+//Студенты родившиеся в 90 годы
+SELECT *
+FROM Students
+WHERE YEAR(DateOfBirth) >= 1990 AND YEAR(DateOfBirth) <= 1999;
+
+
+//E-mail сутдентов у которых фамилия заканчивается на "S"
+SELECT Email
+FROM Students
+WHERE LastName LIKE 'S%';
+
+
+// Список студентов, чьи email-адреса заканчиваются на ".com"
+SELECT FirstName, LastName, Email
+FROM Students
+WHERE Email LIKE '%.com';
