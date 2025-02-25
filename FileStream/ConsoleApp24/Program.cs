@@ -8,7 +8,7 @@ namespace AsyncWordCount
 {
     class Program
     {
-        private static long wordCount = 0;
+        private static long wCount = 0;
         private static CancellationTokenSource ct = new CancellationTokenSource();
 
         static async Task Main(string[] args)
@@ -51,7 +51,7 @@ namespace AsyncWordCount
                 {
                     cancellationToken.ThrowIfCancellationRequested(); 
                     string[] words = line.Split(new char[] { ' ', '\t', '\r', '\n', ',', '.', ';', ':', '!', '?' }, StringSplitOptions.RemoveEmptyEntries); 
-                    Interlocked.Add(ref wordCount, words.Length); 
+                    Interlocked.Add(ref wCount, words.Length); 
                 }
             }
         }
@@ -60,7 +60,7 @@ namespace AsyncWordCount
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                Console.WriteLine($"Данное количество слов: {wordCount}");
+                Console.WriteLine($"Данное количество слов: {wCount}");
                 try
                 {
                     await Task.Delay(1000, cancellationToken);
