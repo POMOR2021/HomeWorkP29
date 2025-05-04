@@ -1,0 +1,128 @@
+using System;
+using System.Data;
+using System.Data.Common;
+using System.Data.SqlClient;
+using static System.Net.Mime.MediaTypeNames;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+
+namespace EmployeeDataApp
+{
+    class Program
+    {
+        static string connectionString = "Data Source=ELFOREVER\\SQLEXPRESS;Integrated Security = True; Connect Timeout = 30; Encrypt=True;Trust Server Certificate=True;Application Intent = ReadWrite; Multi Subnet Failover=False"; 
+
+        static void Main(string[] args)
+        {
+            Console.WriteLine("Введите минимальный возраст сотрудников для фильтрации:");
+            if (!int.TryParse(Console.ReadLine(), out int minAge))
+            {
+                Console.WriteLine("Некорректный ввод возраста. Программа завершена.");
+                return;
+            }
+
+            try
+            {
+                ListEmployees(minAge);
+                UpdateSalaries();
+                ListUpdatedEmployees();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Произошла ошибка: {ex.Message}");
+            }
+
+            Console.WriteLine("Нажмите любую клавишу для завершения...");
+            Console.ReadKey();
+        }
+
+        static void ListEmployees(int minAge)
+        {
+            Console.WriteLine("\nСписок сотрудников, чей возраст больше или равен " + minAge + ":");
+            using (DbConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open();
+
+                using (DbCommand command = connection.CreateCommand())
+                {
+                    command.CommandText = "SELECT EmployeeID, Name, Age, Salary FROM Employees WHERE Age >= @minAge";
+
+                    // Параметризированный запрос
+                    DbParameter minAgeParam = command.CreateParameter();
+                    minAgeParam.ParameterName = "@minAge";
+                    minAgeParam.DbType = DbType.Int32;
+                    minAgeParam.Value = minAge;
+                    command.Parameters.Add(minAgeParam);
+
+                    using (DbDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            Console.WriteLine($"ID: {reader["EmployeeID"]}, Имя: {reader["Name"]}, Возраст: {reader["Age"]}, Зарплата: {reader["Salary"]}");
+                        }
+                    }
+                }
+            }
+        }
+
+        static void UpdateSalaries()
+        {
+            Console.WriteLine("\nОбновление зарплат сотрудников, работающих более 5 лет...");
+            using (DbConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open();
+                DbTransaction transaction = null;
+
+                try
+                {
+                    transaction = connection.BeginTransaction();
+
+                    using (DbCommand command = connection.CreateCommand())
+                    {
+                        command.Transaction = transaction;
+                        command.CommandText = "UPDATE Employees SET Salary = Salary * 1.10 WHERE YearsInCompany > 5";
+                        int rowsAffected = command.ExecuteNonQuery();
+                        Console.WriteLine($"Обновлено строк: {rowsAffected}");
+                    }
+
+                    transaction.Commit();
+                    Console.WriteLine("Транзакция успешно завершена.");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Ошибка во время транзакции: {ex.Message}");
+                    try
+                    {
+                        transaction?.Rollback();
+                        Console.WriteLine("Транзакция отменена.");
+                    }
+                    catch (Exception rbEx)
+                    {
+                        Console.WriteLine($"Ошибка во время отмены транзакции: {rbEx.Message}");
+                    }
+                }
+            }
+        }
+
+        static void ListUpdatedEmployees()
+        {
+            Console.WriteLine("\nСписок обновленных сотрудников:");
+            using (DbConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open();
+
+                using (DbCommand command = connection.CreateCommand())
+                {
+                    command.CommandText = "SELECT EmployeeID, Name, Age, Salary FROM Employees WHERE YearsInCompany > 5";
+
+                    using (DbDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            Console.WriteLine($"ID: {reader["EmployeeID"]}, Имя: {reader["Name"]}, Возраст: {reader["Age"]}, Зарплата: {reader["Salary"]}");
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
