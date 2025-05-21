@@ -1,0 +1,79 @@
+using System;
+using System.Data.SqlClient;
+
+namespace BookDatabaseApp
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            string connectionString = "Data Source=ELFOREVER\\SQLEXPRESS;Integrated Security=True;Connect Timeout=30;Encrypt=True;Trust Server Certificate=True;Application Intent=ReadWrite;Multi Subnet Failover=False";
+            int numBooks = 0;
+            decimal totalPrice = 0;
+            int totalPages = 0;
+
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open();
+
+                using (SqlCommand countCommand = new SqlCommand("SELECT COUNT(id) FROM Books;", connection))
+                {
+                    object result = countCommand.ExecuteScalar();
+                    if (result != null && result != DBNull.Value)
+                    {
+                        numBooks = Convert.ToInt32(result);
+                    }
+                    else
+                    {
+                        Console.WriteLine("Не удалось получить количество книг.");
+                        return;
+                    }
+
+                    Console.WriteLine($"Количество книг в таблице: {numBooks}");
+                }
+
+                using (SqlCommand selectCommand = new SqlCommand("SELECT * FROM Books;", connection))
+                {
+                    using (SqlDataReader reader = selectCommand.ExecuteReader())
+                    {
+                        for (int i = 0; i < numBooks; i++)
+                        {
+                            if (reader.Read())
+                            {
+                                int id = reader.GetInt32(0);
+                                string title = reader.GetString(1);
+                                string author = reader.GetString(2);
+                                decimal price = reader.GetDecimal(3);
+                                int pages = reader.GetInt32(4);
+                                string genre = reader.IsDBNull(5) ? null : reader.GetString(5);
+
+                                totalPrice += price;
+                                totalPages += pages;
+
+                                Console.WriteLine($"Книга {i + 1}:");
+                                Console.WriteLine($"  ID: {id}");
+                                Console.WriteLine($"  Title: {title}");
+                                Console.WriteLine($"  Author: {author}");
+                                Console.WriteLine($"  Price: {price}");
+                                Console.WriteLine($"  Pages: {pages}");
+                                Console.WriteLine($"  Genre: {genre ?? "N/A"}");
+                                Console.WriteLine();
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Предупреждение: Ожидалось {numBooks} книг, но данных меньше.");
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                Console.WriteLine("---------------------------");
+                Console.WriteLine($"Общая сумма цен всех книг: {totalPrice}");
+                Console.WriteLine($"Общее количество страниц всех книг: {totalPages}");
+            }
+
+            Console.ReadKey();
+        }
+    }
+}
