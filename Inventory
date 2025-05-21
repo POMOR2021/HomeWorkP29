@@ -1,0 +1,163 @@
+using System;
+using System.Data;
+using System.Data.SqlClient;
+
+namespace InventoryManagementSystem
+{
+    public abstract class DbDataProvider
+    {
+        public abstract DataSet GetDataSet(string selectCommand, string tableName);
+        public abstract void UpdateDataSet(DataSet dataSet, string tableName);
+    }
+
+    public class SqlServerDataProvider : DbDataProvider
+    {
+        private string connectionString;
+
+        public SqlServerDataProvider(string connectionString)
+        {
+            this.connectionString = connectionString;
+        }
+
+        public override DataSet GetDataSet(string selectCommand, string tableName)
+        {
+            DataSet dataSet = new DataSet();
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                SqlDataAdapter dataAdapter = new SqlDataAdapter(selectCommand, connectionString);
+                dataAdapter.Fill(dataSet, tableName);
+            }
+            return dataSet;
+        }
+
+        public override void UpdateDataSet(DataSet dataSet, string tableName)
+        {
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                SqlDataAdapter dataAdapter = new SqlDataAdapter($"SELECT * FROM {tableName}", connectionString);
+                SqlCommandBuilder commandBuilder = new SqlCommandBuilder(dataAdapter);
+                dataAdapter.Update(dataSet, tableName);
+            }
+        }
+    }
+
+    class Program
+    {
+        const string ConnStr = "Data Source=ELFOREVER\\SQLEXPRESS;Integrated Security=True;Connect Timeout=30;Encrypt=True;Trust Server Certificate=True;Application Intent=ReadWrite;Multi Subnet Failover=False";
+        const string TableName = "Inventory";
+        const string IdCol = "Id";
+        const string NameCol = "Name";
+        const string QtyCol = "Quantity";
+        const string PriceCol = "Price";
+
+        static DbDataProvider dataProvider = new SqlServerDataProvider(ConnStr);
+
+        static void Main(string[] args)
+        {
+            DataSet ds = dataProvider.GetDataSet($"SELECT * FROM {TableName}", TableName);
+
+            while (true)
+            {
+                Console.WriteLine("1. Просмотр\n2. Добавить\n3. Обновить\n4. Удалить\n5. Сохранить\n6. Выход");
+                string choice = Console.ReadLine();
+
+                switch (choice)
+                {
+                    case "1": DisplayInventory(ds); break;
+                    case "2": AddItem(ds); break;
+                    case "3": UpdateItem(ds); break;
+                    case "4": DeleteItem(ds); break;
+                    case "5": SaveChanges(ds); break;
+                    case "6": return;
+                    default: Console.WriteLine("Неверный ввод."); break;
+                }
+            }
+        }
+
+        static void DisplayInventory(DataSet ds)
+        {
+            DataTable dt = ds.Tables[TableName];
+            if (dt == null) { Console.WriteLine("Таблица не найдена."); return; }
+
+            foreach (DataRow row in dt.Rows)
+            {
+                Console.WriteLine($"ID: {row[IdCol]}, Название: {row[NameCol]}, Количество: {row[QtyCol]}, Цена: {row[PriceCol]}");
+            }
+        }
+
+        static void AddItem(DataSet ds)
+        {
+            DataTable dt = ds.Tables[TableName];
+            if (dt == null) { Console.WriteLine("Таблица не найдена."); return; }
+
+            DataRow newRow = dt.NewRow();
+
+            Console.WriteLine("Название:");
+            newRow[NameCol] = Console.ReadLine();
+
+            Console.WriteLine("Количество:");
+            newRow[QtyCol] = Convert.ToInt32(Console.ReadLine());
+
+            Console.WriteLine("Цена:");
+            newRow[PriceCol] = Convert.ToDecimal(Console.ReadLine());
+
+            dt.Rows.Add(newRow);
+            Console.WriteLine("Товар добавлен.");
+        }
+
+        static void UpdateItem(DataSet ds)
+        {
+            DataTable dt = ds.Tables[TableName];
+            if (dt == null) { Console.WriteLine("Таблица не найдена."); return; }
+
+            Console.WriteLine("ID товара для обновления:");
+            int itemIdToUpdate = Convert.ToInt32(Console.ReadLine());
+            DataRow rowToUpdate = dt.Rows.Find(itemIdToUpdate);
+
+            if (rowToUpdate == null) { Console.WriteLine("Товар не найден."); return; }
+
+            Console.WriteLine("Новое название (пусто - оставить прежним):");
+            string newName = Console.ReadLine();
+            if (!string.IsNullOrEmpty(newName)) rowToUpdate[NameCol] = newName;
+
+            Console.WriteLine("Новое количество (пусто - оставить прежним):");
+            string newQuantityString = Console.ReadLine();
+            if (!string.IsNullOrEmpty(newQuantityString)) rowToUpdate[QtyCol] = Convert.ToInt32(newQuantityString);
+
+            Console.WriteLine("Новая цена (пусто - оставить прежним):");
+            string newPriceString = Console.ReadLine();
+            if (!string.IsNullOrEmpty(newPriceString)) rowToUpdate[PriceCol] = Convert.ToDecimal(newPriceString);
+
+            Console.WriteLine("Информация обновлена.");
+        }
+
+        static void DeleteItem(DataSet ds)
+        {
+            DataTable dt = ds.Tables[TableName];
+            if (dt == null) { Console.WriteLine("Таблица не найдена."); return; }
+
+            Console.WriteLine("ID товара для удаления:");
+            int itemIdToDelete = Convert.ToInt32(Console.ReadLine());
+            DataRow rowToDelete = dt.Rows.Find(itemIdToDelete);
+
+            if (rowToDelete == null) { Console.WriteLine("Товар не найден."); return; }
+
+            rowToDelete.Delete();
+            Console.WriteLine("Товар удален.");
+        }
+
+        static void SaveChanges(DataSet ds)
+        {
+            try
+            {
+                dataProvider.UpdateDataSet(ds, TableName);
+                ds.AcceptChanges();
+                Console.WriteLine("Изменения сохранены.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка сохранения: {ex.Message}");
+            }
+        }
+    }
+}
