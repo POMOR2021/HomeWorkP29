@@ -1,0 +1,125 @@
+var db = this;
+
+//Задание 1
+void CreateDatabase()
+{
+    // Создание таблицы Countries
+    db.ExecuteCommand(@"
+        IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Countries')
+        BEGIN
+            CREATE TABLE Countries (
+                Id INT PRIMARY KEY IDENTITY(1,1),
+                Name NVARCHAR(100) NOT NULL,
+                Capital NVARCHAR(100) NOT NULL,
+                Population BIGINT NOT NULL,
+                Area FLOAT NOT NULL,
+                Continent NVARCHAR(50) NOT NULL
+            );
+            
+            INSERT INTO Countries (Name, Capital, Population, Area, Continent)
+            VALUES 
+            ('Россия', 'Москва', 146780720, 17125191, 'Европа'),
+            ('Китай', 'Пекин', 1409670000, 9596961, 'Азия'),
+            ('Индия', 'Нью-Дели', 1380004385, 3287263, 'Азия'),
+            ('США', 'Вашингтон', 331002651, 9833517, 'Америка'),
+            ('Индонезия', 'Джакарта', 273523615, 1904569, 'Азия'),
+            ('Пакистан', 'Исламабад', 220892340, 881912, 'Азия'),
+            ('Бразилия', 'Бразилиа', 212559417, 8515767, 'Америка'),
+            ('Нигерия', 'Абуджа', 206139589, 923768, 'Африка'),
+            ('Бангладеш', 'Дакка', 164689383, 147570, 'Азия'),
+            ('Мексика', 'Мехико', 128932753, 1964375, 'Америка'),
+            ('Япония', 'Токио', 126476461, 377975, 'Азия'),
+            ('Эфиопия', 'Аддис-Абеба', 114963588, 1104300, 'Африка'),
+            ('Филиппины', 'Манила', 109581078, 300000, 'Азия'),
+            ('Египет', 'Каир', 102334404, 1002450, 'Африка'),
+            ('Вьетнам', 'Ханой', 97338579, 331212, 'Азия');
+        END
+    ");
+}
+
+//Задание 2
+void BasicQueries()
+{
+    var allCountries = from c in db.Countries select c;
+    allCountries.Dump("1. Все страны");
+    
+    var countryNames = from c in db.Countries select c.Name;
+    countryNames.Dump("2. Названия стран");
+    
+    var capitals = from c in db.Countries select c.Capital;
+    capitals.Dump("3. Столицы стран");
+    
+    var europeanCountries = from c in db.Countries 
+                           where c.Continent == "Европа" 
+                           select c.Name;
+    europeanCountries.Dump("4. Европейские страны");
+    
+    double minArea = 1000000;
+    var largeCountries = from c in db.Countries 
+                         where c.Area > minArea 
+                         select c.Name;
+    largeCountries.Dump($"5. Страны с площадью > {minArea} км²");
+}
+
+//Задание 3
+void FilterQueries()
+{
+    var countriesWithAU = from c in db.Countries
+                          where c.Name.Contains("а") || c.Name.Contains("у")
+                          select c;
+    countriesWithAU.Dump("1. Страны с буквами 'а' или 'у'");
+    
+    var countriesStartWithA = from c in db.Countries
+                              where c.Name.StartsWith("А")
+                              select c;
+    countriesStartWithA.Dump("2. Страны на 'А'");
+    
+    double minArea = 500000;
+    double maxArea = 2000000;
+    var countriesInAreaRange = from c in db.Countries
+                               where c.Area >= minArea && c.Area <= maxArea
+                               select c.Name;
+    countriesInAreaRange.Dump($"3. Страны с площадью {minArea}-{maxArea} км²");
+    
+    long minPopulation = 100000000;
+    var populousCountries = from c in db.Countries
+                            where c.Population > minPopulation
+                            select c.Name;
+    populousCountries.Dump($"4. Страны с населением > {minPopulation}");
+}
+
+//Задание 4
+void AnalyticalQueries()
+{
+    var top5ByArea = (from c in db.Countries
+                      orderby c.Area descending
+                      select c).Take(5);
+    top5ByArea.Dump("1. Топ-5 стран по площади");
+    
+    var top5ByPopulation = (from c in db.Countries
+                            orderby c.Population descending
+                            select c).Take(5);
+    top5ByPopulation.Dump("2. Топ-5 стран по населению");
+    
+    var largestCountry = (from c in db.Countries
+                          orderby c.Area descending
+                          select c).First();
+    largestCountry.Dump("3. Самая большая страна");
+    
+    var mostPopulousCountry = (from c in db.Countries
+                               orderby c.Population descending
+                               select c).First();
+    mostPopulousCountry.Dump("4. Страна с самым большим населением");
+    
+    var smallestAfricanCountry = (from c in db.Countries
+                                 where c.Continent == "Африка"
+                                 orderby c.Area ascending
+                                 select c).First();
+    smallestAfricanCountry.Dump("5. Самая маленькая страна в Африке");
+    
+    var averageAsiaArea = (from c in db.Countries
+                           where c.Continent == "Азия"
+                           select c.Area).Average();
+    averageAsiaArea.Dump("6. Средняя площадь стран Азии");
+}
+
