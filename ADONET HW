@@ -1,0 +1,336 @@
+using System;
+using System.Data;
+using Microsoft.Data.SqlClient;
+using System.Collections.Generic;
+
+
+public class CoffeeShopApp
+{
+    private readonly string connectionString;
+
+    public CoffeeShopApp(string connectionString)
+    {
+        this.connectionString = connectionString;
+    }
+
+    public class Coffee
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string Description { get; set; }
+        public string Country { get; set; }
+        public string Type { get; set; }
+        public decimal CostPrice { get; set; }
+        public int WeightGrams { get; set; }
+    }
+
+    //Задание 1
+    public void AddCoffee(Coffee coffee)
+    {
+        using (SqlConnection connection = new SqlConnection(connectionString))
+        {
+            SqlDataAdapter adapter = new SqlDataAdapter("SELECT * FROM Coffee", connection);
+            DataSet dataSet = new DataSet();
+            adapter.Fill(dataSet, "Coffee");
+
+            DataRow newRow = dataSet.Tables["Coffee"].NewRow();
+            newRow["Name"] = coffee.Name;
+            newRow["Description"] = coffee.Description;
+            newRow["Country"] = coffee.Country;
+            newRow["Type"] = coffee.Type;
+            newRow["CostPrice"] = coffee.CostPrice;
+            newRow["WeightGrams"] = coffee.WeightGrams;
+
+            dataSet.Tables["Coffee"].Rows.Add(newRow);
+
+            SqlCommandBuilder builder = new SqlCommandBuilder(adapter);
+            adapter.Update(dataSet, "Coffee");
+        }
+    }
+
+    public void UpdateCoffee(Coffee coffee)
+    {
+        using (SqlConnection connection = new SqlConnection(connectionString))
+        {
+            SqlDataAdapter adapter = new SqlDataAdapter("SELECT * FROM Coffee WHERE Id = @Id", connection);
+            adapter.SelectCommand.Parameters.AddWithValue("@Id", coffee.Id);
+
+            DataSet dataSet = new DataSet();
+            adapter.Fill(dataSet, "Coffee");
+
+            if (dataSet.Tables["Coffee"].Rows.Count > 0)
+            {
+                DataRow row = dataSet.Tables["Coffee"].Rows[0];
+                row["Name"] = coffee.Name;
+                row["Description"] = coffee.Description;
+                row["Country"] = coffee.Country;
+                row["Type"] = coffee.Type;
+                row["CostPrice"] = coffee.CostPrice;
+                row["WeightGrams"] = coffee.WeightGrams;
+
+                SqlCommandBuilder builder = new SqlCommandBuilder(adapter);
+                adapter.Update(dataSet, "Coffee");
+            }
+        }
+    }
+
+    public void DeleteCoffee(int id)
+    {
+        using (SqlConnection connection = new SqlConnection(connectionString))
+        {
+            SqlDataAdapter adapter = new SqlDataAdapter("SELECT * FROM Coffee WHERE Id = @Id", connection);
+            adapter.SelectCommand.Parameters.AddWithValue("@Id", id);
+
+            DataSet dataSet = new DataSet();
+            adapter.Fill(dataSet, "Coffee");
+
+            if (dataSet.Tables["Coffee"].Rows.Count > 0)
+            {
+                dataSet.Tables["Coffee"].Rows[0].Delete();
+
+                SqlCommandBuilder builder = new SqlCommandBuilder(adapter);
+                adapter.Update(dataSet, "Coffee");
+            }
+        }
+    }
+
+    public DataTable GetAllCoffee()
+    {
+        using (SqlConnection connection = new SqlConnection(connectionString))
+        {
+            SqlDataAdapter adapter = new SqlDataAdapter("SELECT * FROM Coffee", connection);
+            DataSet dataSet = new DataSet();
+            adapter.Fill(dataSet);
+            return dataSet.Tables[0];
+        }
+    }
+
+    //Задание 2
+    public DataTable GetCoffeeWithCherryMention()
+    {
+        using (SqlConnection connection = new SqlConnection(connectionString))
+        {
+            SqlDataAdapter adapter = new SqlDataAdapter(
+                "SELECT * FROM Coffee WHERE Description LIKE '%вишн%'", connection);
+            DataSet dataSet = new DataSet();
+            adapter.Fill(dataSet);
+            return dataSet.Tables[0];
+        }
+    }
+
+    public DataTable GetCoffeeByCostRange(decimal min, decimal max)
+    {
+        using (SqlConnection connection = new SqlConnection(connectionString))
+        {
+            SqlDataAdapter adapter = new SqlDataAdapter(
+                "SELECT * FROM Coffee WHERE CostPrice BETWEEN @min AND @max", connection);
+            adapter.SelectCommand.Parameters.AddWithValue("@min", min);
+            adapter.SelectCommand.Parameters.AddWithValue("@max", max);
+
+            DataSet dataSet = new DataSet();
+            adapter.Fill(dataSet);
+            return dataSet.Tables[0];
+        }
+    }
+
+    public DataTable GetCoffeeByWeightRange(int min, int max)
+    {
+        using (SqlConnection connection = new SqlConnection(connectionString))
+        {
+            SqlDataAdapter adapter = new SqlDataAdapter(
+                "SELECT * FROM Coffee WHERE WeightGrams BETWEEN @min AND @max", connection);
+            adapter.SelectCommand.Parameters.AddWithValue("@min", min);
+            adapter.SelectCommand.Parameters.AddWithValue("@max", max);
+
+            DataSet dataSet = new DataSet();
+            adapter.Fill(dataSet);
+            return dataSet.Tables[0];
+        }
+    }
+
+    public DataTable GetCoffeeByCountries(List<string> countries)
+    {
+        using (SqlConnection connection = new SqlConnection(connectionString))
+        {
+            string countryList = string.Join("','", countries);
+            SqlDataAdapter adapter = new SqlDataAdapter(
+                $"SELECT * FROM Coffee WHERE Country IN ('{countryList}')", connection);
+
+            DataSet dataSet = new DataSet();
+            adapter.Fill(dataSet);
+            return dataSet.Tables[0];
+        }
+    }
+
+    //Задание 3
+    public DataTable GetCoffeeCountByCountry()
+    {
+        using (SqlConnection connection = new SqlConnection(connectionString))
+        {
+            SqlDataAdapter adapter = new SqlDataAdapter(
+                "SELECT Country, COUNT(*) AS CoffeeCount FROM Coffee GROUP BY Country", connection);
+            DataSet dataSet = new DataSet();
+            adapter.Fill(dataSet);
+            return dataSet.Tables[0];
+        }
+    }
+
+    public DataTable GetAverageWeightByCountry()
+    {
+        using (SqlConnection connection = new SqlConnection(connectionString))
+        {
+            SqlDataAdapter adapter = new SqlDataAdapter(
+                "SELECT Country, AVG(WeightGrams) AS AvgWeight FROM Coffee GROUP BY Country", connection);
+            DataSet dataSet = new DataSet();
+            adapter.Fill(dataSet);
+            return dataSet.Tables[0];
+        }
+    }
+
+    public DataTable GetTop3CheapestByCountry(string country)
+    {
+        using (SqlConnection connection = new SqlConnection(connectionString))
+        {
+            SqlDataAdapter adapter = new SqlDataAdapter(
+                "SELECT TOP 3 * FROM Coffee WHERE Country = @Country ORDER BY CostPrice ASC", connection);
+            adapter.SelectCommand.Parameters.AddWithValue("@Country", country);
+
+            DataSet dataSet = new DataSet();
+            adapter.Fill(dataSet);
+            return dataSet.Tables[0];
+        }
+    }
+
+    public DataTable GetTop3ExpensiveByCountry(string country)
+    {
+        using (SqlConnection connection = new SqlConnection(connectionString))
+        {
+            SqlDataAdapter adapter = new SqlDataAdapter(
+                "SELECT TOP 3 * FROM Coffee WHERE Country = @Country ORDER BY CostPrice DESC", connection);
+            adapter.SelectCommand.Parameters.AddWithValue("@Country", country);
+
+            DataSet dataSet = new DataSet();
+            adapter.Fill(dataSet);
+            return dataSet.Tables[0];
+        }
+    }
+
+    public DataTable GetTop3CheapestOverall()
+    {
+        using (SqlConnection connection = new SqlConnection(connectionString))
+        {
+            SqlDataAdapter adapter = new SqlDataAdapter(
+                "SELECT TOP 3 * FROM Coffee ORDER BY CostPrice ASC", connection);
+            DataSet dataSet = new DataSet();
+            adapter.Fill(dataSet);
+            return dataSet.Tables[0];
+        }
+    }
+
+    public DataTable GetTop3ExpensiveOverall()
+    {
+        using (SqlConnection connection = new SqlConnection(connectionString))
+        {
+            SqlDataAdapter adapter = new SqlDataAdapter(
+                "SELECT TOP 3 * FROM Coffee ORDER BY CostPrice DESC", connection);
+            DataSet dataSet = new DataSet();
+            adapter.Fill(dataSet);
+            return dataSet.Tables[0];
+        }
+    }
+
+    //Задание 4
+    public DataTable GetTop3CountriesByCoffeeCount()
+    {
+        using (SqlConnection connection = new SqlConnection(connectionString))
+        {
+            SqlDataAdapter adapter = new SqlDataAdapter(
+                @"SELECT TOP 3 Country, COUNT(*) AS CoffeeCount 
+                  FROM Coffee GROUP BY Country 
+                  ORDER BY CoffeeCount DESC", connection);
+            DataSet dataSet = new DataSet();
+            adapter.Fill(dataSet);
+            return dataSet.Tables[0];
+        }
+    }
+
+    public DataTable GetTop3CountriesByTotalWeight()
+    {
+        using (SqlConnection connection = new SqlConnection(connectionString))
+        {
+            SqlDataAdapter adapter = new SqlDataAdapter(
+                @"SELECT TOP 3 Country, SUM(WeightGrams) AS TotalWeight 
+                  FROM Coffee GROUP BY Country 
+                  ORDER BY TotalWeight DESC", connection);
+            DataSet dataSet = new DataSet();
+            adapter.Fill(dataSet);
+            return dataSet.Tables[0];
+        }
+    }
+
+    public DataTable GetTop3ArabicaByWeight()
+    {
+        using (SqlConnection connection = new SqlConnection(connectionString))
+        {
+            SqlDataAdapter adapter = new SqlDataAdapter(
+                @"SELECT TOP 3 * FROM Coffee 
+                  WHERE Type = 'Арабика' 
+                  ORDER BY WeightGrams DESC", connection);
+            DataSet dataSet = new DataSet();
+            adapter.Fill(dataSet);
+            return dataSet.Tables[0];
+        }
+    }
+
+    public DataTable GetTop3RobustaByWeight()
+    {
+        using (SqlConnection connection = new SqlConnection(connectionString))
+        {
+            SqlDataAdapter adapter = new SqlDataAdapter(
+                @"SELECT TOP 3 * FROM Coffee 
+                  WHERE Type = 'Робуста' 
+                  ORDER BY WeightGrams DESC", connection);
+            DataSet dataSet = new DataSet();
+            adapter.Fill(dataSet);
+            return dataSet.Tables[0];
+        }
+    }
+
+    public DataTable GetTop3BlendByWeight()
+    {
+        using (SqlConnection connection = new SqlConnection(connectionString))
+        {
+            SqlDataAdapter adapter = new SqlDataAdapter(
+                @"SELECT TOP 3 * FROM Coffee 
+                  WHERE Type = 'Бленд' 
+                  ORDER BY WeightGrams DESC", connection);
+            DataSet dataSet = new DataSet();
+            adapter.Fill(dataSet);
+            return dataSet.Tables[0];
+        }
+    }
+
+    public Dictionary<string, DataTable> GetTop3ByEachType()
+    {
+        var result = new Dictionary<string, DataTable>();
+        string[] types = { "Арабика", "Робуста", "Бленд" };
+
+        foreach (var type in types)
+        {
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                SqlDataAdapter adapter = new SqlDataAdapter(
+                    @"SELECT TOP 3 * FROM Coffee 
+                      WHERE Type = @Type 
+                      ORDER BY WeightGrams DESC", connection);
+                adapter.SelectCommand.Parameters.AddWithValue("@Type", type);
+
+                DataSet dataSet = new DataSet();
+                adapter.Fill(dataSet);
+                result.Add(type, dataSet.Tables[0]);
+            }
+        }
+
+        return result;
+    }
+}
