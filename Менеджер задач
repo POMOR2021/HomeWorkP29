@@ -72,7 +72,6 @@ namespace ProcessManager
                 }
                 catch
                 {
-                    // Пропускаем процессы, к которым нет доступа
                     Console.WriteLine("{0,-10} {1,-50} {2,-15}",
                         process.Id,
                         process.ProcessName,
