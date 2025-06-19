@@ -1,0 +1,174 @@
+using System;
+using System.Diagnostics;
+using System.Linq;
+
+namespace ProcessManager
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            Console.WriteLine("Консольный менеджер задач");
+            Console.WriteLine("-------------------------");
+
+            while (true)
+            {
+                DisplayMenu();
+
+                var input = Console.ReadLine();
+
+                switch (input)
+                {
+                    case "1":
+                        ListProcesses();
+                        break;
+                    case "2":
+                        KillProcess();
+                        break;
+                    case "3":
+                        StartProcess();
+                        break;
+                    case "4":
+                        Console.WriteLine("Выход из программы...");
+                        return;
+                    default:
+                        Console.WriteLine("Неверный ввод. Попробуйте снова.");
+                        break;
+                }
+
+                Console.WriteLine("\nНажмите любую клавишу для продолжения...");
+                Console.ReadKey();
+                Console.Clear();
+            }
+        }
+
+        static void DisplayMenu()
+        {
+            Console.WriteLine("\nМеню:");
+            Console.WriteLine("1. Просмотреть список процессов");
+            Console.WriteLine("2. Завершить процесс");
+            Console.WriteLine("3. Запустить новый процесс");
+            Console.WriteLine("4. Выход");
+            Console.Write("Выберите действие: ");
+        }
+
+        static void ListProcesses()
+        {
+            Console.WriteLine("\nСписок запущенных процессов:");
+            Console.WriteLine("{0,-10} {1,-50} {2,-15}", "ID", "Имя процесса", "Память (MB)");
+
+            var processes = Process.GetProcesses()
+                .OrderBy(p => p.ProcessName)
+                .ToList();
+
+            foreach (var process in processes)
+            {
+                try
+                {
+                    Console.WriteLine("{0,-10} {1,-50} {2,-15:N2}",
+                        process.Id,
+                        process.ProcessName,
+                        process.WorkingSet64 / 1024.0 / 1024.0);
+                }
+                catch
+                {
+                    // Пропускаем процессы, к которым нет доступа
+                    Console.WriteLine("{0,-10} {1,-50} {2,-15}",
+                        process.Id,
+                        process.ProcessName,
+                        "Нет доступа");
+                }
+            }
+
+            Console.WriteLine($"\nВсего процессов: {processes.Count}");
+        }
+
+        static void KillProcess()
+        {
+            Console.Write("\nВведите ID процесса для завершения: ");
+            if (!int.TryParse(Console.ReadLine(), out int processId))
+            {
+                Console.WriteLine("Ошибка: введите числовой ID процесса.");
+                return;
+            }
+
+            try
+            {
+                var process = Process.GetProcessById(processId);
+                Console.WriteLine($"Вы уверены, что хотите завершить процесс {process.ProcessName} (ID: {process.Id})? (y/n)");
+                var confirm = Console.ReadLine();
+
+                if (confirm?.ToLower() == "y")
+                {
+                    process.Kill();
+                    Console.WriteLine($"Процесс {process.ProcessName} (ID: {process.Id}) успешно завершен.");
+                }
+                else
+                {
+                    Console.WriteLine("Отмена завершения процесса.");
+                }
+            }
+            catch (ArgumentException)
+            {
+                Console.WriteLine($"Ошибка: процесс с ID {processId} не найден.");
+            }
+            catch (InvalidOperationException)
+            {
+                Console.WriteLine("Ошибка: процесс уже завершен.");
+            }
+            catch (System.ComponentModel.Win32Exception ex)
+            {
+                Console.WriteLine($"Ошибка доступа: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Неизвестная ошибка: {ex.Message}");
+            }
+        }
+
+        static void StartProcess()
+        {
+            Console.Write("\nВведите путь к исполняемому файлу или имя программы: ");
+            var fileName = Console.ReadLine();
+
+            if (string.IsNullOrWhiteSpace(fileName))
+            {
+                Console.WriteLine("Ошибка: путь не может быть пустым.");
+                return;
+            }
+
+            try
+            {
+                var process = new Process();
+                process.StartInfo.FileName = fileName;
+                process.StartInfo.UseShellExecute = true;
+
+                Console.Write("Введите аргументы (если нужны) или нажмите Enter: ");
+                var arguments = Console.ReadLine();
+                if (!string.IsNullOrEmpty(arguments))
+                {
+                    process.StartInfo.Arguments = arguments;
+                }
+
+                process.Start();
+                Console.WriteLine($"Процесс {fileName} успешно запущен с ID {process.Id}");
+            }
+            catch (System.ComponentModel.Win32Exception ex)
+            {
+                Console.WriteLine($"Ошибка: {ex.Message}");
+                if (ex.NativeErrorCode == 2)
+                {
+                    Console.WriteLine("Файл не найден. Проверьте путь и попробуйте снова.");
+                }
+                else if (ex.NativeErrorCode == 5)
+                {
+                    Console.WriteLine("Отказано в доступе. Запустите программу от имени администратора.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Неизвестная ошибка: {ex.Message}");
+            }
+        }
+    }
+}
