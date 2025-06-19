@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Изменение цвета текста</title>
+    <style>
+        h1 {
+            color: red;
+        }
+        p {
+            color: blue;
+        }
+    </style>
+</head>
+<body>
+<h1>Цветной заголовок</h1>
+<p>Цветной абзац</p>
+</body>
+</html>
+<!--Задание 2-->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Рамка вокруг абзаца</title>
+    <style>
+        p {
+            border: 2px solid black;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+<h1>Рамка вокруг абзаца</h1>
+<p>Этот абзац внутри рамки</p>
+</body>
+</html>
