@@ -1,0 +1,214 @@
+using System;
+using System.IO.Pipes;
+using System.Threading;
+
+
+namespace Pool
+{
+    public class ResourcePool<T> where T : IDisposable
+    {
+        private readonly T[] _res;
+        private readonly Semaphore _sem;
+
+        public ResourcePool(T[] resources)
+        {
+            _res = resources;
+            _sem = new Semaphore(resources.Length, resources.Length);
+        }
+
+        public T AcquireResource()
+        {
+            _sem.WaitOne();
+            lock (_res)
+            {
+                for (int i = 0; i < _res.Length; i++)
+                {
+                    if (_res[i] != null)
+                    {
+                        var resource = _res[i];
+                        _res[i] = default;
+                        return resource;
+                    }
+                }
+            }
+            throw new InvalidOperationException("No available resources");
+        }
+
+        public void ReleaseResource(T resource)
+        {
+            lock (_res)
+            {
+                for (int i = 0; i < _res.Length; i++)
+                {
+                    if (_res[i] == null)
+                    {
+                        _res[i] = resource;
+                        _sem.Release();
+                        return;
+                    }
+                }
+            }
+            throw new InvalidOperationException("Resource pool is full");
+        }
+    }
+
+    class Program1
+    {
+        static void Main(string[] args)
+        {
+            var connect = new FakeConnection[3];
+            for (int i = 0; i < connect.Length; i++)
+                connect[i] = new FakeConnection($"Connection_{i + 1}");
+
+            var pool = new ResourcePool<FakeConnection>(connect);
+
+            for (int i = 0; i < 10; i++)
+            {
+                int threadId = i;
+                new Thread(() =>
+                {
+                    try
+                    {
+                        var conn = pool.AcquireResource();
+                        Console.WriteLine($"Поток {threadId} получил {conn.Name}");
+                        Thread.Sleep(new Random().Next(500, 2000));
+                        pool.ReleaseResource(conn);
+                        Console.WriteLine($"Поток {threadId} освободил {conn.Name}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Ошибка в потоке {threadId}: {ex.Message}");
+                    }
+                }).Start();
+            }
+        }
+    }
+
+
+    public class FakeConnection : IDisposable
+    {
+        public string Name { get; }
+        public FakeConnection(string name) => Name = name;
+        public void Dispose() => Console.WriteLine($"{Name} disposed");
+    }
+}
+
+//Задание 2
+namespace Event
+{
+    class ThreadCoordinator
+    {
+        private readonly AutoResetEvent _event1 = new AutoResetEvent(false);
+        private readonly AutoResetEvent _event2 = new AutoResetEvent(false);
+        private readonly AutoResetEvent _event3 = new AutoResetEvent(false);
+
+        public void RunTasks()
+        {
+            new Thread(() =>
+            {
+                Console.WriteLine("Поток 1: Начало задачи A");
+                Thread.Sleep(1000);
+                Console.WriteLine("Поток 1: Задача A завершена");
+                _event1.Set();
+            }).Start();
+
+            new Thread(() =>
+            {
+                _event1.WaitOne();
+                Console.WriteLine("Поток 2: Начало задачи B");
+                Thread.Sleep(1500);
+                Console.WriteLine("Поток 2: Задача B завершена");
+                _event2.Set();
+            }).Start();
+
+            new Thread(() =>
+            {
+                _event2.WaitOne();
+                Console.WriteLine("Поток 3: Начало задачи C");
+                Thread.Sleep(800);
+                Console.WriteLine("Поток 3: Задача C завершена");
+                _event3.Set();
+            }).Start();
+
+            _event3.WaitOne();
+            Console.WriteLine("Все задачи выполнены в правильном порядке");
+        }
+    }
+
+    class Program2
+    {
+        static void Main(string[] args)
+        {
+            var coord = new ThreadCoordinator();
+            coord.RunTasks();
+        }
+    }
+}
+//Задание 3
+namespace SemOgran
+{
+    class CriticalSectionManager
+    {
+        private readonly Semaphore _sem;
+        private readonly string _logFile;
+        private int _sharedC = 0;
+
+        public CriticalSectionManager(int maxThreads, string logFile)
+        {
+            _sem = new Semaphore(maxThreads, maxThreads);
+            _logFile = logFile;
+            File.WriteAllText(_logFile, string.Empty);
+        }
+
+        public void AccessCriticalSection(int threadId)
+        {
+            Console.WriteLine($"Поток {threadId} ждет доступа к критической секции");
+            _sem.WaitOne();
+
+            try
+            {
+                Console.WriteLine($"Поток {threadId} вошел в критическую секцию");
+
+                int localCounter;
+                lock (this)
+                {
+                    _sharedC++;
+                    localCounter = _sharedC;
+                }
+
+                Thread.Sleep(new Random().Next(500, 1500));
+
+                string logEntry = $"Поток {threadId}, счетчик: {localCounter}, время: {DateTime.Now:HH:mm:ss.fff}";
+                lock (_logFile)
+                {
+                    File.AppendAllText(_logFile, logEntry + Environment.NewLine);
+                }
+
+                Console.WriteLine($"Поток {threadId} завершил работу в критической секции");
+            }
+            finally
+            {
+                _sem.Release();
+            }
+        }
+    }
+
+    class Program3
+    {
+        static void Main(string[] args)
+        {
+            var manager = new CriticalSectionManager(2, "critical_section_log.txt");
+
+            for (int i = 0; i < 10; i++)
+            {
+                int threadId = i;
+                new Thread(() => manager.AccessCriticalSection(threadId)).Start();
+            }
+
+            Console.WriteLine("Все потоки запущены. Нажмите Enter для выхода...");
+            Console.ReadLine();
+            Console.WriteLine("Содержимое файла:");
+            Console.WriteLine(File.ReadAllText("critical_section_log.txt"));
+        }
+    }
+}
