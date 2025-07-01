@@ -1,0 +1,149 @@
+using System;
+
+namespace MDApp
+{
+    class Prog
+    {
+        static void Main(string[] args)
+        {
+            Console.WriteLine("Мультизадачное приложение");
+
+            var mathOps = new MathOps();
+            var txtProc = new TxtProc();
+
+            while (true)
+            {
+                Console.WriteLine("\nВыберите тип операции:");
+                Console.WriteLine("1) Математика");
+                Console.WriteLine("2) Текст");
+                Console.WriteLine("0) Выход");
+                string ch = Console.ReadLine();
+
+                if (ch == "0") break;
+
+                switch (ch)
+                {
+                    case "1":
+                        RunMath(mathOps);
+                        break;
+                    case "2":
+                        RunText(txtProc);
+                        break;
+                    default:
+                        Console.WriteLine("Ошибка ввода!");
+                        break;
+                }
+            }
+        }
+
+        static void RunMath(MathOps mOps)
+        {
+            try
+            {
+                Console.WriteLine("\nМатематика");
+                Console.Write("Число 1: ");
+                double n1 = double.Parse(Console.ReadLine());
+                Console.Write("Число 2: ");
+                double n2 = double.Parse(Console.ReadLine());
+
+                Console.WriteLine("\nОперации:");
+                Console.WriteLine("1) +");
+                Console.WriteLine("2) -");
+                Console.WriteLine("3) *");
+                Console.WriteLine("4) /");
+                Console.Write("> ");
+                string op = Console.ReadLine();
+
+                double res = 0;
+                switch (op)
+                {
+                    case "1":
+                        res = mOps.Add(n1, n2);
+                        Console.WriteLine($"= {res}");
+                        break;
+                    case "2":
+                        res = mOps.Sub(n1, n2);
+                        Console.WriteLine($"= {res}");
+                        break;
+                    case "3":
+                        res = mOps.Mul(n1, n2);
+                        Console.WriteLine($"= {res}");
+                        break;
+                    case "4":
+                        try
+                        {
+                            res = mOps.Div(n1, n2);
+                            Console.WriteLine($"= {res}");
+                        }
+                        catch
+                        {
+                            Console.WriteLine("Делить на 0 нельзя!");
+                        }
+                        break;
+                    default:
+                        Console.WriteLine("Неверная операция!");
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка: {ex.Message}");
+            }
+        }
+
+        static void RunText(TxtProc tProc)
+        {
+            try
+            {
+                Console.WriteLine("\nТекст");
+                Console.WriteLine("Введите текст:");
+                string txt = Console.ReadLine();
+
+                Console.WriteLine("\nОперации:");
+                Console.WriteLine("1) Перевернуть");
+                Console.WriteLine("2) Посчитать слова");
+                string op = Console.ReadLine();
+
+                switch (op)
+                {
+                    case "1":
+                        string rev = tProc.Rev(txt);
+                        Console.WriteLine($"Результат: {rev}");
+                        break;
+                    case "2":
+                        int cnt = tProc.CntWrds(txt);
+                        Console.WriteLine($"Слов: {cnt}");
+                        break;
+                    default:
+                        Console.WriteLine("Неверная операция!");
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка: {ex.Message}");
+            }
+        }
+    }
+
+    public class MathOps
+    {
+        public double Add(double a, double b) => a + b;
+        public double Sub(double a, double b) => a - b;
+        public double Mul(double a, double b) => a * b;
+        public double Div(double a, double b)
+        {
+            if (Math.Abs(b) < double.Epsilon) throw new DivideByZeroException();
+            return a / b;
+        }
+    }
+
+    public class TxtProc
+    {
+        public string Rev(string s) => new string(s.Reverse().ToArray());
+
+        public int CntWrds(string s) =>
+            string.IsNullOrWhiteSpace(s) ? 0 :
+            s.Split(new[] { ' ', '\t', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries).Length;
+    }
+}
